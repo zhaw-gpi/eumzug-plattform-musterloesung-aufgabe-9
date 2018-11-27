@@ -1,0 +1,54 @@
+<!--
+Formular zum User Task "Wohnung an Zuzugsadresse auswählen"
+-->
+<form>
+    <!-- INFOMELDUNG MIT ANLEITUNG -->
+    <div class="alert alert-info">
+        * Diese Felder müssen ausgefüllt werden.
+    </div>
+    
+    <!-- FORMULARFELD ZUKÜNFTIGE WOHNUNG -->
+    <div class="form-group">
+        <label>Zukünftige Wohnung*</label>
+        <select
+            ng-model="apartmentMoveInModel"
+            ng-options="'Etage ' + al.wstwk.toString().substr(3, 4) + ', Lage ' + al.wbez + ' (' + al.wazim + ' Zimmer) [' + al.whgnr + ']' for al in wohnungenListModel |orderBy:'whgnr' track by al.whgnr"
+            class="form-control"
+            required>
+        </select>
+    </div>
+    
+    <script cam-script type="text/form-script">
+        // AngularJS-Scope-Variable camForm.variableManager wird lokalen Variable zugewiesen
+        var variableManager = camForm.variableManager;
+        
+        // Camunda Form Lifecycle: Nach dem Laden des Formulars werden Prozessvariablen von der Process Engine (Server) in den variableManager geladen
+        // Liste der gefundenen Wohnungen, ausgewählte Wohnung
+        camForm.on('form-loaded', function() {
+            variableManager.fetchVariable("wohnungenList");
+            variableManager.fetchVariable("apartmentMoveIn");
+        });
+        
+        // Camunda Form Lifecycle: Nach dem Laden der Variablen ...
+        camForm.on('variables-fetched', function() {
+            // Geladene Variablen entsprechenden AngularJS-Model-Variablen zuweisen
+            $scope.wohnungenListModel = variableManager.variableValue("wohnungenList");
+            $scope.apartmentMoveInModel = variableManager.variableValue("apartmentMoveIn");
+        });
+        
+        // Camunda Form Lifecycle: Vor dem Senden der Formulardaten an den Server ausgeführt
+        camForm.on('submit', function() {
+            // Bestehende Prozessvariable für Wohnung löschen und eine neue erstellen mit dem ausgewählten Wert in der Liste (apartmentMoveInModel). Da diese kein primitive ist, sondern ein Javascript-Objekt, muss dieses nach JSON serialisiert werden (daher serializationDataFormat) und server-seitig in das WohnungType-Java-Objekt deserialisiert werden (daher objectTypeName mitgegeben)
+            variableManager.destroyVariable('apartmentMoveIn');
+             variableManager.createVariable({
+                 name:'apartmentMoveIn',
+                 type:'Object',
+                 value: $scope.apartmentMoveInModel,
+                 valueInfo: {
+                     serializationDataFormat: 'application/json',
+                     objectTypeName: 'ch.zhaw.gpi.eumzugplattform.processdata.WohnungType'
+                 }
+             });
+        });
+    </script>
+</form>

@@ -1,0 +1,184 @@
+<!--
+Formular für den Schritt 'Identifikationsmerkmale erfassen'
+-->
+<div class="alert alert-info">      
+    <p>Erfassen Sie Ihre Daten, wie diese in einem amtlichen Dokument, Ihrer Meldebestätigung 
+        oder Ihrem Schriftenempfangsschein aufgeführt sind.</p>
+    <p>Falls Sie mehrere Vornamen haben oder einen Doppelnamen führen, müssen Sie alle Namen aufführen.</p>
+    <p>* Diese Felder müssen ausgefüllt werden.</p>
+</div>
+
+
+<form class="form-horizontal" name="camundaForm">
+    <!-- PERSONALIEN -->
+    <div class="panel panel-default">
+        <div class="panel-heading"><b>Personalien</b></div>
+        <div class="panel-body">
+            <div class="form-group row">
+                <div class="col-xs-4">
+                    <label>
+                        Vornamen*
+                    </label>
+                    <input 
+                        class="form-control"
+                        name="firstName"
+                        cam-variable-type="String"
+                        cam-variable-name="firstName"
+                        type="text"
+                        required
+                        maxlength="100"
+                        placeholder="Max Emilian">
+                    <p class="help-block">Geben Sie Ihre Vornamen ein, wie Sie auf Ihrem amtlichen Ausweis abgebildet sind.</p>
+                </div>
+                <div class="col-xs-4">
+                    <label>
+                        Nachname*
+                    </label>
+                    <input class="form-control" name="officialName" cam-variable-type="String" cam-variable-name="officialName" type="text" required maxlength="100" placeholder="Muster">
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-xs-4">
+                    <label>
+                        AHV-Nummer
+                    </label>
+                    <input class="form-control" name="vn" cam-variable-type="Long" cam-variable-name="vn" type="number" min="7560000000001" max="7569999999999" placeholder="756**********">
+                    <p class="help-block" ng-show="camundaForm.vn.$invalid && camundaForm.vn.$dirty">Geben Sie entweder keine AHV-Nummer ein oder eine im Bereich von 7560000000001 bis 7569999999999. Sie finden die Nummer auf Ihrer Krankenversicherungskarte.</p>
+                </div>
+
+                <div class="col-xs-4">
+                    <label>
+                        Geschlecht*
+                    </label>
+                    <select class="form-control" cam-variable-type="Integer" cam-variable-name="sex" required>
+                        <option></option>
+                        <option value=1>Männlich</option>
+                        <option value=2>Weiblich</option>
+                        <option value=3>Unbekant</option>
+                    </select>
+                </div>
+
+                <div class="col-xs-4">
+                    <label>
+                        Geburtsdatum*
+                    </label>
+                    <p class="input-group">
+                        <input type="text"
+                               name="dateOfBirth"
+                               ng-model="dateOfBirthModel"
+                               class="form-control"
+                               datepicker-popup="dd.MM.yyyy"
+                               is-open="dateFieldOpeneddateOfBirth"
+                               placeholder="Datumswahl -->"
+                               required/>
+
+                        <span class="input-group-btn">
+                            <button type="button"
+                                    class="btn btn-default"
+                                    ng-click="opendateOfBirth($event)">
+                                <i class="glyphicon glyphicon-calendar"></i>
+                            </button>
+                        </span>
+                    </p>
+                    <script cam-script type="text/form-script">
+                        $scope.opendateOfBirth = function($event) {
+                        $event.preventDefault();
+                        $event.stopPropagation();
+
+                        $scope.dateFieldOpeneddateOfBirth = true;
+                        };
+                    </script>
+                    <p class="help-block" ng-show="camundaForm.dateOfBirth.$error.date && camundaForm.dateOfBirth.$dirty">Geben Sie das Datum im Format TT.MM.JJJJ ein.</p>
+                </div>                
+            </div>
+        </div>
+    </div>
+
+    <!-- IHR JETZIGER WOHNORT -->
+    <div class="panel panel-default">
+        <div class="panel-heading"><b>Ihr jetziger Wohnort</b></div>
+        <div class="panel-body">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label>
+                        Politische Gemeinde*
+                    </label>
+                    <select 
+                        class="form-control"
+                        ng-model="municipalityMoveOutModel"
+                        ng-options="municipality.municipalityName for municipality in municipalityListModel | orderBy:'municipalityName' track by municipality.municipalityId" required>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script cam-script type="text/form-script">
+        // AngularJS-Scope-Variable camForm.variableManager wird lokalen Variable zugewiesen
+        var variableManager = camForm.variableManager;
+        
+        // Camunda Form Lifecycle: Nach dem Laden des Formulars werden Prozessvariablen von der Process Engine (Server) in den variableManager geladen
+        // Geburtsdatum, Liste der politischen Gemeinden, Wegzugsgemeinde, Wegzugsgemeinde-Id, Wegzugsgemeinde-Name
+        camForm.on('form-loaded', function() {
+            variableManager.fetchVariable("dateOfBirth");
+            variableManager.fetchVariable('municipalityList');
+            variableManager.fetchVariable('municipalityMoveOut');
+            variableManager.fetchVariable('municipalityIdMoveOut');
+            variableManager.fetchVariable('municipalityNameMoveOut');
+        });
+
+        // Camunda Form Lifecycle: Nach dem Laden der Variablen werden diese direkt an den AngularJS-Scope gehängt für das Model-View-Binding
+        camForm.on('variables-fetched', function() {
+            $scope.dateOfBirthModel = variableManager.variableValue("dateOfBirth");
+            $scope.municipalityListModel = variableManager.variableValue('municipalityList');
+            $scope.municipalityMoveOutModel = variableManager.variableValue('municipalityMoveOut');
+        });
+
+        // Camunda Form Lifecycle: Vor dem Senden der Formulardaten an den Server ausgeführt
+        camForm.on('submit', function() {
+            // GEBURTSDATUM KORREKT FORMATIERT ALS PROZESSVARIABLE SPEICHERN
+            // $scope.dateOfBirthModel ist ein String, sofern das Datum nicht im Datepicker verändert wurde => In ein Javascript-Date-Objekt umwandeln
+            var dateOfBirthModelDate = new Date($scope.dateOfBirthModel);
+            
+            // Gemäss https://www.w3schools.com/jsref/jsref_toisostring.asp  und https://stackoverflow.com/questions/10830357/javascript-toisostring-ignores-timezone-offset kann wird das normale JavaScript-Datumsobjekt in ein ISO-Format-Datumszeichenfolge umgewandelt
+            var dateOfBirthIsoString = new Date(dateOfBirthModelDate.getTime() - (dateOfBirthModelDate.getTimezoneOffset() * 60000)).toISOString();
+
+            // Bestehende Prozessvariable für Geburtsdatum löschen und eine neue erstellen mit der ISO-Format-Datumszeichenfolge
+            variableManager.destroyVariable('dateOfBirth');
+            variableManager.createVariable({
+                'name':'dateOfBirth',
+                'type':'Date',
+                'value': dateOfBirthIsoString
+            });
+            
+            // POLITISCHE GEMEINDE WEGZUG
+            // Bestehende Prozessvariable für Wegzugsgemeinde löschen und eine neue erstellen mit dem ausgewählten Wert in der Liste (municipalityMoveOutModel). Da diese kein primitive ist, sondern ein Javascript-Objekt, muss dieses nach JSON serialisiert werden (daher serializationDataFormat) und server-seitig in das Municipality-Java-Objekt deserialisiert werden (daher objectTypeName mitgegeben)
+            variableManager.destroyVariable('municipalityMoveOut');
+            variableManager.createVariable({
+                name:'municipalityMoveOut',
+                type:'Object',
+                value: $scope.municipalityMoveOutModel,
+                valueInfo: {
+                    serializationDataFormat: 'application/json',
+                    objectTypeName: 'ch.zhaw.gpi.eumzugplattform.entities.MunicipalityEntity'
+                }
+            });
+            
+            // Bestehende Prozessvariable für Wegzugsgemeinde-Id löschen und eine neue erstellen mit dem entsprechenden Wert aus municipalityMoveOutModel zur bequemen Verwendung in Prüfung Wegzug/Zuzug vs. Umzug
+            variableManager.destroyVariable('municipalityIdMoveOut');
+            variableManager.createVariable({
+                'name':'municipalityIdMoveOut',
+                'type':'Integer',
+                'value': $scope.municipalityMoveOutModel.municipalityId
+            });
+            
+            // Bestehende Prozessvariable für Wegzugsgemeinde-Name löschen und eine neue erstellen mit dem entsprechenden Wert aus municipalityMoveOutModel zur bequemen Verwendung z.B. in AnSchalterVerweisenForm
+            variableManager.destroyVariable('municipalityNameMoveOut');
+            variableManager.createVariable({
+                'name':'municipalityNameMoveOut',
+                'type':'String',
+                'value': $scope.municipalityMoveOutModel.municipalityName
+            });
+        });
+    </script>
+</form>

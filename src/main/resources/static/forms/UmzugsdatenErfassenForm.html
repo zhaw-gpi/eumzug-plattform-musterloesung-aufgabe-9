@@ -1,0 +1,140 @@
+<!--
+Formular zum UserTask "Umzugsdaten erfassen"
+-->
+<form name="camundaForm">
+    <!-- INFOMELDUNG MIT ANLEITUNG -->
+    <div class="alert alert-info">
+        <p>Im Normalfall stimmen Weg- und Zuzugsdatum überein. Falls nicht, setzen Sie ein Häkchen bei 'Abweichendes Zuzugsdatum'.</p>
+        <p>* Diese Felder müssen ausgefüllt werden.</p>
+    </div>
+
+    <!-- FORMULARFELDER -->
+    <div class="form-group row">
+        <div class="col-xs-4">
+            <label>Wegzugsdatum*</label>
+            <div class="input-group">
+                <input type="text"
+                       name="departureDate"
+                       ng-model="departureDateModel"
+                       placeholder="Datumswahl -->"
+                       class="form-control"
+                       datepicker-popup="dd.MM.yyyy"
+                       is-open="departureDateOpened"
+                       required>
+
+                <span class="input-group-btn">
+                    <button type="button"
+                            class="btn btn-default"
+                            ng-click="departureDateOpenClicked($event)">
+                        <i class="glyphicon glyphicon-calendar"></i>
+                    </button>
+                </span>
+            </div>
+            <p class="help-block" ng-show="camundaForm.departureDate.$error.date">Geben Sie das Datum im Format TT.MM.JJJJ ein.</p>
+            <script cam-script type="text/form-script">
+                $scope.departureDateOpenClicked = function($event) {
+                    $event.preventDefault();
+                    $event.stopPropagation();
+                    $scope.departureDateOpened = true;
+                };
+            </script>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <div class="col-xs-4">    
+            <div class="checkbox">
+                <label>
+                    <input class="checkbox" type="checkbox" ng-model="abweichendesZuzugsdatum">
+                    Abweichendes Zuzugsdatum?
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <div class="col-xs-4" ng-show="abweichendesZuzugsdatum">   
+            <label>Zuzugsdatum*</label>
+            <div class="input-group">
+                <input type="text"
+                       name="arrivalDate"
+                       ng-model="arrivalDateModel"
+                       placeholder="Datumswahl -->"
+                       class="form-control"
+                       datepicker-popup="dd.MM.yyyy"
+                       is-open="arrivalDateOpened">
+
+                <span class="input-group-btn">
+                    <button type="button"
+                            class="btn btn-default"
+                            ng-click="arrivalDateOpenClicked($event)">
+                        <i class="glyphicon glyphicon-calendar"></i>
+                    </button>
+                </span>
+            </div>
+            <p class="help-block" ng-show="camundaForm.arrivalDate.$error.date">Geben Sie das Datum im Format TT.MM.JJJJ ein.</p>
+            <script cam-script type="text/form-script">
+                $scope.arrivalDateOpenClicked = function($event) {
+                    $event.preventDefault();
+                    $event.stopPropagation();
+                    $scope.arrivalDateOpened = true;
+                };
+            </script>
+        </div>
+    </div>
+
+    <script cam-script type="text/form-script">    
+        // AngularJS-Scope-Variable camForm.variableManager wird lokalen Variable zugewiesen
+        var variableManager = camForm.variableManager;
+
+        // Camunda Form Lifecycle: Nach dem Laden des Formulars werden Prozessvariablen von der Process Engine (Server) in den variableManager geladen
+        // Wegzugsdatum, Zuzugsdatum
+        camForm.on('form-loaded', function() {
+            variableManager.fetchVariable("departureDate");
+            variableManager.fetchVariable("arrivalDate");
+        });
+
+        // Camunda Form Lifecycle: Nach dem Laden der Variablen ...
+        camForm.on('variables-fetched', function() {
+            // ... werden diese direkt an den AngularJS-Scope gehängt für das Model-View-Binding
+            $scope.departureDateModel = variableManager.variableValue("departureDate");
+            $scope.arrivalDateModel = variableManager.variableValue("arrivalDate");
+            // ... und falls die beiden Daten unterschiedlich sind und arrivalDateModel nicht leer, dann soll abweichendesZuzugsdatum auf true gesetzt werden
+            if($scope.departureDateModel !== $scope.arrivalDateModel && $scope.arrivalDateModel) {
+                $scope.abweichendesZuzugsdatum = true;
+            }
+        });        
+
+        // Camunda Form Lifecycle: Vor dem Senden der Formulardaten an den Server ausgeführt
+        camForm.on('submit', function() {
+            // Wenn arrivalDate nicht gesetzt wurde, dann wird es automatisch auf den Wert von departureDate gesetzt
+            if(!$scope.arrivalDateModel){
+                $scope.arrivalDateModel = $scope.departureDateModel;
+            }
+            
+            // $scope.***DateModel ist ein String, sofern das Datum nicht im Datepicker verändert wurde => In ein Javascript-Date-Objekt umwandeln
+            var departureDateModelDate = new Date($scope.departureDateModel);
+            var arrivalDateModelDate = new Date($scope.arrivalDateModel);
+            
+            // Gemäss https://www.w3schools.com/jsref/jsref_toisostring.asp  und https://stackoverflow.com/questions/10830357/javascript-toisostring-ignores-timezone-offset kann wird das normale JavaScript-Datumsobjekt in ein ISO-Format-Datumszeichenfolge umgewandelt
+            var departureDateIsoString = new Date(departureDateModelDate.getTime() - (departureDateModelDate.getTimezoneOffset() * 60000)).toISOString();
+            var arrivalDateIsoString = new Date(arrivalDateModelDate.getTime() - (arrivalDateModelDate.getTimezoneOffset() * 60000)).toISOString();
+
+            // Bestehende Prozessvariable für Wegzugsdatum löschen und eine neue erstellen mit der ISO-Format-Datumszeichenfolge
+            variableManager.destroyVariable('departureDate');
+            variableManager.createVariable({
+                'name':'departureDate',
+                'type':'Date',
+                'value': departureDateIsoString
+            });
+            
+            // Bestehende Prozessvariable für Zuzugsdatum löschen und eine neue erstellen mit der ISO-Format-Datumszeichenfolge
+            variableManager.destroyVariable('arrivalDate');
+            variableManager.createVariable({
+                'name':'arrivalDate',
+                'type':'Date',
+                'value': arrivalDateIsoString
+            });
+        });
+    </script>
+</form>

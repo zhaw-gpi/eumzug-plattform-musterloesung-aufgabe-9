@@ -1,0 +1,72 @@
+<!--
+Formular zum UserTask "Mitumziehende Personen wählen"
+-->
+<form>
+    <!-- INFOMELDUNG MIT ANLEITUNG -->
+    <div class="alert alert-info">      
+        Wählen Sie alle Personen aus, die mit Ihnen umziehen. Aus Datenschutzgründen werden nur die Vornamen angezeigt.
+    </div>
+    
+    <!-- LISTE VON CHECKBOXES -->
+    <div class="checkbox" ng-repeat="person in personsModel track by person.localPersonId" ng-show="!person.isMainPerson">
+        <label>
+            <input type="checkbox" ng-model="dummy" ng-change="changedCheckbox(person)">
+            {{person.firstName}}
+        </label>
+    </div>
+
+    <script cam-script type="text/from-script">
+        debugger;
+        // AngularJS-Scope-Variable camForm.variableManager wird lokalen Variable zugewiesen
+        var variableManager = camForm.variableManager;
+
+        // Camunda Form Lifecycle: Nach dem Laden des Formulars werden Prozessvariablen von der Process Engine (Server) in den variableManager geladen
+        // Liste der mitumziehenden Personen
+        camForm.on('form-loaded', function(){
+            // Streng genommen geht das aus Datenschutzgründen nicht (Grund siehe erster Kommentar oben)
+            variableManager.fetchVariable("personList");
+        });
+
+        // Camunda Form Lifecycle: Nach dem Laden der Variablen ...
+        camForm.on('variables-fetched', function(){
+            // ... Personenliste in Model-Variable speichern
+            $scope.personsModel = variableManager.variableValue("personList").persons;
+            
+            // ... Model-Variable für selektierte Personen initiieren (zunächst leeres Array)
+            $scope.checkedPersons = [];
+        });
+        
+        // Listener-Methode, wenn eine Checkbox zu einer Person an- oder abgewählt wurde mit Übergabe der ausgewählten Person
+        $scope.changedCheckbox = function(person){
+            // Wenn die ausgewählte Person (noch) nicht im Array der ausgewählten Personen ist, ...
+            if($scope.checkedPersons.indexOf(person) === -1) {
+                // ... diese dem Array hinzufügen
+                $scope.checkedPersons.push(person);
+            } else {
+                // ansonsten diese aus dem Array entfernen über ihren Index
+                $scope.checkedPersons.splice($scope.checkboxPersons.indexOf(person), 1);
+            }
+        }
+
+        // Camunda Form Lifecycle: Vor dem Senden der Formulardaten an den Server ausgeführt
+        camForm.on('submit', function(){
+            // Anzahl Personen in der Personenliste als Zählervariable auslesen
+            var i = $scope.personsModel.length
+            
+            // Solange die Bedingung in der while-Klammer true ist (was gleichbedeutend ist mit i = 0, da in JavaScript als false interpretiert), jeweils um 1 abzählen ...
+            while(i--){
+                // ... die Person aus der Liste der Personen an einem bestimmten Index auslesen
+                var personAtIndex = $scope.personsModel[i]
+                
+                // ... und für diese prüfen, ob es sich NICHT um den Haupt-Meldepflichtigen handelt...
+                if(!personAtIndex.isMainPerson){
+                    // ... und für diese prüfen, ob sie NICHT in der Liste der ausgewählten Personen ist
+                    if($scope.checkedPersons.indexOf(personAtIndex) === -1){
+                        // In dem Fall aus der Liste der Personen entfernen
+                        $scope.personsModel.splice(i, 1);
+                    }
+                }
+            }
+        });
+    </script> 
+</form>
