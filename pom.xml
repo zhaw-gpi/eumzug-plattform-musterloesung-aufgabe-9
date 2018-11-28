@@ -7,7 +7,7 @@
     Boot-Versionsnummer -->
     <groupId>ch.zhaw.gpi</groupId>
     <artifactId>eumzug-plattform-musterloesung-aufgabe-9</artifactId>
-    <name>eUmzug Plattform (Musterlösung Aufgabe 9)</name>
+    <name>eUmzug Plattform (Musterlösung Aufgabe 9 und 10)</name>
     <version>3.0.0</version>
     
     <!-- Konfiguration des Maven-Projekts -->
