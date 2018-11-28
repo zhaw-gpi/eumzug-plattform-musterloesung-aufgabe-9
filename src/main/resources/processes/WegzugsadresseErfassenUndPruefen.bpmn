@@ -60,19 +60,6 @@ execution.setVariable("adresseUngueltigZaehler", adresseUngueltigZaehler + 1);</
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!adressMoveOutExists}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="SequenceFlow_0gby9vq" sourceRef="PersonenidentifikationErfolgreichAbgeschlossen" targetRef="ExclusiveGateway_02h6ni7" />
-    <bpmn:task id="WegzugsadressePruefen" name="Wegzugsadresse prüfen">
-      <bpmn:documentation>Wegzugsadress-Eingaben auf Übereinstimmung in Gebäude- und Wohnungsregister prüfen
-
-Die Operation adressPruefungOperation des Gebäude- und Wohnungsregister-Web Service (http://localhost:8090/soap/GebaeudeUndWohnungsRegisterService) wird synchron aufgerufen.
-
-Der Web Service-Client wird mit org.springframework.ws.client implementiert, Das Marshalling und Unmarshalling über org.springframework.oxm.jaxb.
-
-Für den Request an den Web Service müssen die Prozessvariablen houseNumberMoveOut, swissZipCodeMoveOut und streetMoveOut den passenden Eigenschaften der AddresseType-Klasse zugewiesen werden.
-
-Die Response ist vom Typ AddresseExistenzType. Die darin enthaltene Eigenschaft EXISTS wird der Prozessvariable adressMoveOutExists übergeben.</bpmn:documentation>
-      <bpmn:incoming>SequenceFlow_1n0ru7f</bpmn:incoming>
-      <bpmn:outgoing>SequenceFlow_04ncg2b</bpmn:outgoing>
-    </bpmn:task>
     <bpmn:userTask id="WegzugsadresseErfassen" name="Wegzugsadresse erfassen" camunda:formKey="embedded:app:forms/WegzugsAdresseErfassenForm.html" camunda:assignee="${meldePflichtiger}">
       <bpmn:documentation>Wegzugsadresse Strasse
   eCH-0010:streetMoveOut (Achtung bei diesen und weiteren Attributen, die es sowohl bei Wegzug als auch Zuzug gibt: Es wurde an die eCH-Bezeichnung jeweils noch MoveOut angehängt)
@@ -100,6 +87,19 @@ Bitte korrigieren Sie entweder Ihre Eingaben im nächsten Formular oder melden S
       <bpmn:incoming>SequenceFlow_0fooiee</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_1n0ru7f</bpmn:outgoing>
     </bpmn:userTask>
+    <bpmn:serviceTask id="WegzugsadressePruefen" name="Wegzugsadresse prüfen" camunda:delegateExpression="#{checkAdressMoveOutAdapter}">
+      <bpmn:documentation>Wegzugsadress-Eingaben auf Übereinstimmung in Gebäude- und Wohnungsregister prüfen
+
+Die Operation adressPruefungOperation des Gebäude- und Wohnungsregister-Web Service (http://localhost:8090/soap/GebaeudeUndWohnungsRegisterService) wird synchron aufgerufen.
+
+Der Web Service-Client wird mit org.springframework.ws.client implementiert, Das Marshalling und Unmarshalling über org.springframework.oxm.jaxb.
+
+Für den Request an den Web Service müssen die Prozessvariablen houseNumberMoveOut, swissZipCodeMoveOut und streetMoveOut den passenden Eigenschaften der AddresseType-Klasse zugewiesen werden.
+
+Die Response ist vom Typ AddresseExistenzType. Die darin enthaltene Eigenschaft EXISTS wird der Prozessvariable adressMoveOutExists übergeben.</bpmn:documentation>
+      <bpmn:incoming>SequenceFlow_1n0ru7f</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_04ncg2b</bpmn:outgoing>
+    </bpmn:serviceTask>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1o68a8d">
@@ -176,11 +176,11 @@ Bitte korrigieren Sie entweder Ihre Eingaben im nächsten Formular oder melden S
           <dc:Bounds x="514" y="84" width="41" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="Task_1wp6ba1_di" bpmnElement="WegzugsadressePruefen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
-        <dc:Bounds x="432" y="212" width="100" height="80" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="UserTask_0vukmvb_di" bpmnElement="WegzugsadresseErfassen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
         <dc:Bounds x="272" y="212" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_03qwl5n_di" bpmnElement="WegzugsadressePruefen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
+        <dc:Bounds x="432" y="212" width="100" height="80" />
       </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

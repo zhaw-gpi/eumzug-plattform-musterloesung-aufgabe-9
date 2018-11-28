@@ -65,19 +65,6 @@ execution.setVariable("adresseUngueltigZaehler", adresseUngueltigZaehler + 1);</
       <bpmn:incoming>SequenceFlow_0sag684</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="SequenceFlow_0sag684" sourceRef="WohnungAnZuzugsadresseAuswaehlen" targetRef="ZuzugsInformationenErfolgreichGeprueft" />
-    <bpmn:task id="WohnungenAnZuzugsadresseBestimmen" name="Wohnungen an Zuzugsadresse bestimmen">
-      <bpmn:documentation>Überprüfen, ob für die angegebene Zuzugsadresse Wohnungen im GWR vorhanden sind
-
-Die Operation wohnungenInGebaeudeOperation des Gebäude- und Wohnungsregister-Web Service wird synchron aufgerufen.
-
-Der Web Service-Client wird mit org.springframework.ws.client implementiert, Das Marshalling und Unmarshalling über org.springframework.oxm.jaxb.
-
-Für den Request an den Web Service müssen die Prozessvariablen houseNumberMoveIn, swissZipCodeMoveIn und streetMoveIn den passenden Eigenschaften der AddresseType-Klasse zugewiesen werden.
-
-Die Response ist vom Typ WohnungenAntwortType. Die darin enthaltene Methode getWohnungenAntwort() liefert eine Liste von verfügbaren Wohnungen zurück. Diese Liste wird mit Camunda Spin serialisiert und der Prozessvariable wohnungenList übergeben. Zudem wird die Prozessvariable wohnungenGefunden indirekt generiert.</bpmn:documentation>
-      <bpmn:incoming>SequenceFlow_1n0ru7f</bpmn:incoming>
-      <bpmn:outgoing>SequenceFlow_04ncg2b</bpmn:outgoing>
-    </bpmn:task>
     <bpmn:userTask id="ZuzugsadresseErfassen" name="Zuzugsadresse erfassen" camunda:formKey="embedded:app:forms/ZuzugsadresseErfassenForm.html" camunda:assignee="${meldePflichtiger}">
       <bpmn:documentation>Zuzugsadresse Strasse
   eCH-0010:streetMoveIn (Achtung bei diesen und weiteren Attributen, die es sowohl bei Wegzug als auch Zuzug gibt: Es wurde an die eCH-Bezeichnung jeweils noch MoveIn angehängt)
@@ -117,6 +104,19 @@ Bitte korrigieren Sie entweder Ihre Eingaben im nächsten Formular oder melden S
       <bpmn:incoming>MindestensEineWohnungGefunden</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_0sag684</bpmn:outgoing>
     </bpmn:userTask>
+    <bpmn:serviceTask id="WohnungenAnZuzugsadresseBestimmen" name="Wohnungen an Zuzugsadresse bestimmen" camunda:delegateExpression="#{getWohnungenAnZuzugsadresseAdapter}">
+      <bpmn:documentation>Überprüfen, ob für die angegebene Zuzugsadresse Wohnungen im GWR vorhanden sind
+
+Die Operation wohnungenInGebaeudeOperation des Gebäude- und Wohnungsregister-Web Service wird synchron aufgerufen.
+
+Der Web Service-Client wird mit org.springframework.ws.client implementiert, Das Marshalling und Unmarshalling über org.springframework.oxm.jaxb.
+
+Für den Request an den Web Service müssen die Prozessvariablen houseNumberMoveIn, swissZipCodeMoveIn und streetMoveIn den passenden Eigenschaften der AddresseType-Klasse zugewiesen werden.
+
+Die Response ist vom Typ WohnungenAntwortType. Die darin enthaltene Methode getWohnungenAntwort() liefert eine Liste von verfügbaren Wohnungen zurück. Diese Liste wird mit Camunda Spin serialisiert und der Prozessvariable wohnungenList übergeben. Zudem wird die Prozessvariable wohnungenGefunden indirekt generiert.</bpmn:documentation>
+      <bpmn:incoming>SequenceFlow_1n0ru7f</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_04ncg2b</bpmn:outgoing>
+    </bpmn:serviceTask>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1o68a8d">
@@ -197,14 +197,14 @@ Bitte korrigieren Sie entweder Ihre Eingaben im nächsten Formular oder melden S
         <di:waypoint x="804" y="252" />
         <di:waypoint x="854" y="252" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="Task_1ayw0q9_di" bpmnElement="WohnungenAnZuzugsadresseBestimmen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
-        <dc:Bounds x="432" y="212" width="100" height="80" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="UserTask_1fx6kgf_di" bpmnElement="ZuzugsadresseErfassen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
         <dc:Bounds x="272" y="212" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="UserTask_0istclv_di" bpmnElement="WohnungAnZuzugsadresseAuswaehlen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
         <dc:Bounds x="704" y="212" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_0h8t8pk_di" bpmnElement="WohnungenAnZuzugsadresseBestimmen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
+        <dc:Bounds x="432" y="212" width="100" height="80" />
       </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

@@ -60,25 +60,6 @@ Diese Variable wird benötigt, um zu steuern, ob nach dem Erfassen der Versicher
         <bpmn:outgoing>SequenceFlow_0unz7dw</bpmn:outgoing>
         <bpmn:outgoing>SequenceFlow_104azdr</bpmn:outgoing>
       </bpmn:exclusiveGateway>
-      <bpmn:task id="GrundversicherungPruefen" name="Grund-versicherung prüfen">
-        <bpmn:documentation>Grundversicherungsprüfung pro umziehender Person im Auskunftsdienst des VeKa-Centers
-
-Die Methode checkBaseInsurance des RESTful Web Services VeKa-Center-Auskunftsdienst (http://localhost:8070/vekaapi/checkbaseinsurance) wird synchron aufgerufen.
-
-Der Web Service wird konsumiert mit spring-web und jackson-databind (https://spring.io/guides/gs/consuming-rest/).
-
-Für den Request an den Web Service müssen aus person in der Prozessvariable die Eigenschaften baseInsuranceNumber, firstName, officialName und dateOfBirth in ein JSON-Body für den Request an die Methode checkBaseInsurance aufbereitet werden.
-
-In der Realität müsste man sich beim Service authentifizieren, was wir für den Prototypen weglassen.
-
-Die JSON-Response enthält ein VeKaResponse-Objekt mit zwei String-Variablen: checkBaseInsuranceResult, die positiv (Yes, Person ist grundversichert), negativ (No, Person ist nicht grundversichert) oder unklar (Unknown, die Prüfung konnte nicht durchgeführt werden. Einerseits sind nicht alle Versicherungen abfragbar (Bsp.: Helsana) oder die Versichertenkartennum-mer konnte nicht gefunden werden.) sein kann. checkBaseInsuranceResultDetails mit weiteren Erläuterungen.
-
-Diese Antwort wird in den gleich lautenden Eigenschaften des Person-Objekts übergeben.
-
-In einem End Listener wird die Variable checkBaseInsurance auf false gesetzt. Begründung siehe im Kommentar zum GrundversicherungPruefenStartEvent.</bpmn:documentation>
-        <bpmn:incoming>PruefenJa</bpmn:incoming>
-        <bpmn:outgoing>SequenceFlow_1pfbest</bpmn:outgoing>
-      </bpmn:task>
       <bpmn:sequenceFlow id="SequenceFlow_13c4q3d" sourceRef="VersicherungsKartennummernErfassen" targetRef="ExclusiveGateway_0hkwozz" />
       <bpmn:sequenceFlow id="PruefenJa" name="ja" sourceRef="ExclusiveGateway_0hkwozz" targetRef="GrundversicherungPruefen">
         <bpmn:documentation>Im Normalfall soll die Prüfung durchgeführt werden.</bpmn:documentation>
@@ -127,6 +108,28 @@ Skripte:
         <bpmn:incoming>SequenceFlow_14qf1vf</bpmn:incoming>
         <bpmn:outgoing>SequenceFlow_13c4q3d</bpmn:outgoing>
       </bpmn:userTask>
+      <bpmn:serviceTask id="GrundversicherungPruefen" name="Grund-versicherung prüfen" camunda:delegateExpression="#{checkBaseInsuranceAdapter}">
+        <bpmn:documentation>Grundversicherungsprüfung pro umziehender Person im Auskunftsdienst des VeKa-Centers
+
+Aufgrund der Komplexität soll die eigentliche Prüfung in einem ausgelagerten Service stattfinden (CheckBaseInsuranceService), dessen Anforderungen gleich anschliessend beschrieben sind. In der Delegate-Klasse soll lediglich die aktuelle Person in der Multi-Instanz-Aktivität ermittelt werden und diese an den CheckBaseInsuranceService übergeben werden, um dort geprüft zu werden.
+
+Im CheckBaseInsuranceService soll es eine Methode geben, welche folgende Anforderungen erfüllt:
+- Sie nimmt ein Person-Objekt entgegen
+- Sie ruft eine Methode getVeKaCard in einem ausgelagerten VeKaClientService auf und übergibt dieser die Grundversicherungskartennummer. Die  Methode getVeKaCard wiederum ruft über eine GET-Anfrage an die VeKa-REST-API die zugehörige card-Resource ab. Ist diese vorhanden wird sie an die CheckBaseInsuranceService-Methode zurück gegeben, ansonsten wird null zurück gegeben, respektive ein Fehler geworfen, wenn weder 404 noch 200 von der VeKa-API als Antwort kommen.
+- Falls zur Kartennummer keine Karte gefunden wurde, dann soll die checkBaseInsuranceResult-Eigenschaft der Person auf "Unknown" gesetzt werden und die checkBaseInsuranceResultDetails-Eigenschaft auf "Keine Karte zu dieser Nummer gefunden. Mögliche Gründe: (Un)bewusste Falscheingabe oder der Kartenaussteller ist nicht bei der VeKa registriert."
+- Falls die Karte abgelaufen ist, ist checkBaseInsuranceResult "No" und checkBaseInsuranceResultDetails "Karte abgelaufen".
+- Falls die Karte nicht zur übergebenen Person passt, also entweder Vorname, Geburtsdatum und/oder Nachname abweichend sind, ist checkBaseInsuranceResult "No" und checkBaseInsuranceResultDetails "Karte gültig, aber Personalien nicht passend (ABWEICHENDE_PERSONALIEN)", wobei ABWEICHENDE_PERSONALIEN eine kommagetrennte Liste der betroffenen Personalien enthält, also im Maximum "Geburtsdatum, Vorname, Nachname).
+- Falls die obigen Punkte nicht zutreffen, dann ist checkBaseInsuranceResult "Yes" und entsprechend sind auch keine checkBaseInsuranceResultDetails erforderlich.
+
+In einem End Listener wird die Variable checkBaseInsurance auf false gesetzt. Begründung siehe im Kommentar zum GrundversicherungPruefenStartEvent.</bpmn:documentation>
+        <bpmn:extensionElements>
+          <camunda:executionListener event="end">
+            <camunda:script scriptFormat="JavaScript">execution.setVariable("checkBaseInsurance", false);</camunda:script>
+          </camunda:executionListener>
+        </bpmn:extensionElements>
+        <bpmn:incoming>PruefenJa</bpmn:incoming>
+        <bpmn:outgoing>SequenceFlow_1pfbest</bpmn:outgoing>
+      </bpmn:serviceTask>
     </bpmn:subProcess>
     <bpmn:endEvent id="WeitereAngabenErfolgreichErfasst" name="Weitere Angaben erfolgreich erfasst">
       <bpmn:incoming>SequenceFlow_1hy3e56</bpmn:incoming>
@@ -351,9 +354,6 @@ Zuzugsdatum
           <dc:Bounds x="458" y="150" width="35" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="Task_16zaspe_di" bpmnElement="GrundversicherungPruefen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
-        <dc:Bounds x="965" y="76" width="100" height="80" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="SubProcess_0x2bvq1_di" bpmnElement="GrundversicherungFuerAllePersonenPruefen" isExpanded="true">
         <dc:Bounds x="549" y="13" width="812" height="213" />
       </bpmndi:BPMNShape>
@@ -386,6 +386,9 @@ Zuzugsdatum
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="UserTask_0715tsx_di" bpmnElement="UmzugsdatenErfassen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
         <dc:Bounds x="153" y="81" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_1tg1wkf_di" bpmnElement="GrundversicherungPruefen" bioc:stroke="#43A047" bioc:fill="#C8E6C9">
+        <dc:Bounds x="965" y="76" width="100" height="80" />
       </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
