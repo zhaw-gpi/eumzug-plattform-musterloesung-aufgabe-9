@@ -150,7 +150,7 @@ Theoretisch: Dem Prozess wird der BusinessKey, die BusinessCaseId und der Benutz
       <bpmn:sequenceFlow id="SequenceFlow_0mei95i" sourceRef="PersonErfassenUndIdentifizieren" targetRef="WegzugsadresseErfassenUndPruefen" />
       <bpmn:sequenceFlow id="SequenceFlow_15e28af" sourceRef="AlleAngabenPruefen" targetRef="WeiteresVorgehen" />
       <bpmn:sequenceFlow id="Weiter" name="Weiter" sourceRef="WeiteresVorgehen" targetRef="AngabenErfolgreichGeprueft">
-        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${allDataCorrect}</bpmn:conditionExpression>
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${allDataCorrect &amp;&amp; (feesAccepted == null || feesAccepted)}</bpmn:conditionExpression>
       </bpmn:sequenceFlow>
       <bpmn:sequenceFlow id="SequenceFlow_12mko98" sourceRef="GebuehrenErmitteln" targetRef="AlleAngabenPruefen" />
       <bpmn:sequenceFlow id="SequenceFlow_1y66197" sourceRef="StartEvent_11r8wva" targetRef="ExclusiveGateway_0frtja1" />
