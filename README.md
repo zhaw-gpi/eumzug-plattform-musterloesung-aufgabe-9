@@ -2,7 +2,7 @@
 
 > Autoren der Dokumentation: Björn Scheppler
 
-> Dokumentation letztmals aktualisiert: 28.11.2018
+> Dokumentation letztmals aktualisiert: 5.12.2018
 
 > TOC erstellt mit https://ecotrust-canada.github.io/markdown-toc/
 
