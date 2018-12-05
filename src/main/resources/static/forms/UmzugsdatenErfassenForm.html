@@ -32,9 +32,13 @@ Formular zum UserTask "Umzugsdaten erfassen"
             </div>
             <p class="help-block" ng-show="camundaForm.departureDate.$error.date">Geben Sie das Datum im Format TT.MM.JJJJ ein.</p>
             <script cam-script type="text/form-script">
+                // Registrierung einer Funktion, die aufgerufen wird, wenn die DatePicker-Schaltfläche gedrückt wird
                 $scope.departureDateOpenClicked = function($event) {
+                    // Die Standardfunktion von einem Klick auf eine Schaltfläche (Submit) deaktivieren
                     $event.preventDefault();
+                    // Stellt sicher, dass die der Schaltfläche übergeordneten Elemente nicht vom Event betroffen sind
                     $event.stopPropagation();
+                    // Stellt die Variable dateFieldOpened... auf wahr, damit der Datepicker angezeigt wird
                     $scope.departureDateOpened = true;
                 };
             </script>
@@ -74,9 +78,13 @@ Formular zum UserTask "Umzugsdaten erfassen"
             </div>
             <p class="help-block" ng-show="camundaForm.arrivalDate.$error.date">Geben Sie das Datum im Format TT.MM.JJJJ ein.</p>
             <script cam-script type="text/form-script">
+                // Registrierung einer Funktion, die aufgerufen wird, wenn die DatePicker-Schaltfläche gedrückt wird
                 $scope.arrivalDateOpenClicked = function($event) {
+                    // Die Standardfunktion von einem Klick auf eine Schaltfläche (Submit) deaktivieren
                     $event.preventDefault();
+                    // Stellt sicher, dass die der Schaltfläche übergeordneten Elemente nicht vom Event betroffen sind
                     $event.stopPropagation();
+                    // Stellt die Variable dateFieldOpened... auf wahr, damit der Datepicker angezeigt wird
                     $scope.arrivalDateOpened = true;
                 };
             </script>
